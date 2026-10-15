@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الرياض 2100 | مدينة المستقبل ثلاثية الأبعاد</title>
+<style>
+*{margin:0;box-sizing:border-box}body{overflow:hidden;background:#050810;font-family:'Segoe UI',Tahoma,sans-serif;color:#fff}
+canvas{display:block}
+#ui{position:fixed;top:0;right:0;left:0;padding:14px 16px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;gap:8px}
+h1{font-size:26px;background:linear-gradient(90deg,#00f0ff,#7cffb2);-webkit-background-clip:text;color:transparent}
+p.s{opacity:.7;margin-top:4px;font-size:12px}
+.panel{pointer-events:auto;display:flex;flex-direction:column;gap:6px}
+button{background:rgba(10,25,45,.65);backdrop-filter:blur(8px);border:1px solid #00f0ff55;color:#cfffff;padding:8px 12px;border-radius:10px;cursor:pointer;font-size:13px;transition:.2s;font-family:inherit}
+button:hover{background:#00f0ff33;border-color:#00f0ff}
+#info{position:fixed;bottom:16px;right:16px;left:16px;max-width:360px;background:rgba(10,25,45,.7);backdrop-filter:blur(10px);border:1px solid #00f0ff44;border-radius:14px;padding:14px 18px}
+#info h3{color:#7cffb2;margin-bottom:6px}#info p{font-size:13px;line-height:1.7;opacity:.85}
+#load{position:fixed;inset:0;background:#050810;display:flex;align-items:center;justify-content:center;font-size:20px;color:#00f0ff;transition:opacity .8s}
+</style>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+</head><body>
+<div id="load">...جارٍ بناء الرياض 2100</div>
+<div id="ui"><div><h1>الرياض 2100</h1><p class="s">مدينة المستقبل في المملكة العربية السعودية</p></div>
+<div class="panel">
+<button data-go="kingdom">🏙 برج المملكة</button>
+<button data-go="faisal">🔮 الفيصلية</button>
+<button data-go="core">⚡ المركز</button>
+<button data-go="park">🌴 الحديقة</button>
+<button id="tour">🎥 جولة</button>
+<button id="tod">🌙 ليل / نهار</button></div></div>
+<div id="info"><h3>مرحبًا بك</h3><p>اسحب بإصبعك للدوران، واستخدم إصبعين للتقريب، أو اختر معلمًا من القائمة.</p></div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const R=THREE.MathUtils.randFloat,scene=new THREE.Scene();
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;document.body.appendChild(renderer.domElement);
+const cam=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.5,3000);cam.position.set(260,160,300);
+const ctl=new OrbitControls(cam,renderer.domElement);ctl.enableDamping=true;ctl.maxPolarAngle=Math.PI*.49;ctl.maxDistance=900;ctl.target.set(0,50,0);
+const comp=new EffectComposer(renderer);comp.addPass(new RenderPass(scene,cam));
+const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.9,.6,.2);comp.addPass(bloom);
+
+const sun=new THREE.DirectionalLight(0xffffff,1);sun.position.set(300,400,150);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-400,right:400,top:400,bottom:-400,far:1200});scene.add(sun);
+const amb=new THREE.HemisphereLight(0x88aaff,0x221100,.5);scene.add(amb);
+
+let night=true;
+function setTime(n){night=n;
+ const sky=n?0x050a1c:0xf0c88a;scene.background=new THREE.Color(sky);scene.fog=new THREE.FogExp2(sky,n?.0016:.0012);
+ sun.intensity=n?.25:1.4;sun.color.set(n?0x6688ff:0xffd9a0);amb.intensity=n?.35:.8;bloom.strength=n?.9:.25;
+ mats.forEach(m=>m.emissiveIntensity=n?1.6:.1);}
+
+const ground=new THREE.Mesh(new THREE.CircleGeometry(1500,64),new THREE.MeshStandardMaterial({color:0x2a2218,roughness:1}));
+ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+for(let i=0;i<40;i++){const a=R(0,6.28),d=R(550,1200),m=new THREE.Mesh(new THREE.SphereGeometry(R(60,160),24,12),new THREE.MeshStandardMaterial({color:0x6b5538,roughness:1}));
+ m.scale.y=.18;m.position.set(Math.cos(a)*d,0,Math.sin(a)*d);scene.add(m);}
+const roadMat=new THREE.MeshStandardMaterial({color:0x0b0f18,roughness:.4,metalness:.6}),
+ lineMat=new THREE.MeshBasicMaterial({color:0x00f0ff});
+for(let i=-4;i<=4;i++){for(const h of [0,1]){
+ const r=new THREE.Mesh(new THREE.PlaneGeometry(h?700:5,h?5:700),roadMat);r.rotation.x=-Math.PI/2;
+ r.position.set(h?0:i*80,.1,h?i*80:0);scene.add(r);
+ const l=new THREE.Mesh(new THREE.PlaneGeometry(h?700:.4,h?.4:700),lineMat);l.rotation.x=-Math.PI/2;
+ l.position.set(h?0:i*80,.2,h?i*80:0);scene.add(l);}}
+
+function winTex(){const c=document.createElement('canvas');c.width=64;c.height=128;const g=c.getContext('2d');g.fillStyle='#02060e';g.fillRect(0,0,64,128);
+ const cols=['#00f0ff','#ffd27a','#7cffb2','#ffffff'];for(let y=4;y<128;y+=8)for(let x=4;x<64;x+=8){if(Math.random()>.45){g.fillStyle=cols[Math.floor(Math.random()*4)];g.fillRect(x,y,4,5);}}
+ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;}
+const wt=winTex();
+const mats=[];
+function tower(x,z,w,h,d,shape){
+ let geo;
+ if(shape==1)geo=new THREE.CylinderGeometry(w/2*.7,w/2,h,6);
+ else if(shape==2)geo=new THREE.CylinderGeometry(w/2,w/2,h,24);
+ else geo=new THREE.BoxGeometry(w,h,d);
+ const tx=wt.clone();tx.needsUpdate=true;tx.repeat.set(Math.max(1,Math.round(w/12)),Math.max(1,Math.round(h/24)));
+ const m=new THREE.MeshStandardMaterial({color:0x111a2c,metalness:.8,roughness:.25,emissive:0xffffff,emissiveMap:tx,emissiveIntensity:1.6});
+ const b=new THREE.Mesh(geo,m);b.position.set(x,h/2,z);b.castShadow=b.receiveShadow=true;scene.add(b);mats.push(m);
+ if(h>90){const a=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,14),new THREE.MeshBasicMaterial({color:0xff3355}));a.position.set(x,h+7,z);scene.add(a);}
+}
+for(let i=-4;i<4;i++)for(let j=-4;j<4;j++){
+ const cx=i*80+40,cz=j*80+40,dist=Math.hypot(cx,cz);
+ if(dist<60)continue;
+ const n=Math.floor(R(2,5));
+ for(let k=0;k<n;k++){const w=R(10,24),hh=Math.max(14,R(20,150)*Math.exp(-dist/420)*2.1+R(0,25));
+  tower(cx+R(-26,26),cz+R(-26,26),w,hh,R(10,24),Math.floor(Math.random()*3));}}
+const neon=(c)=>new THREE.MeshBasicMaterial({color:c});
+
+const kg=new THREE.Group();
+const kb=new THREE.Mesh(new THREE.BoxGeometry(34,200,34),new THREE.MeshStandardMaterial({color:0x101c33,metalness:.9,roughness:.15,emissive:0x0a3a55,emissiveIntensity:.6}));
+kb.position.y=100;kb.castShadow=true;kg.add(kb);
+const arch=new THREE.Mesh(new THREE.TorusGeometry(14,2.5,16,40,Math.PI),neon(0x00f0ff));arch.position.set(0,205,18);kg.add(arch);
+const ar2=arch.clone();ar2.position.z=-18;kg.add(ar2);
+const bridge=new THREE.Mesh(new THREE.BoxGeometry(34,3,34),neon(0x7cffb2));bridge.position.y=200;kg.add(bridge);
+kg.position.set(-110,0,-90);scene.add(kg);
+const fg=new THREE.Group();
+const fb=new THREE.Mesh(new THREE.CylinderGeometry(4,14,160,3),new THREE.MeshStandardMaterial({color:0x1b2a44,metalness:.9,roughness:.2,emissive:0xff9a2e,emissiveIntensity:.25}));
+fb.position.y=80;fb.castShadow=true;fg.add(fb);
+const sp=new THREE.Mesh(new THREE.SphereGeometry(13,32,24),new THREE.MeshStandardMaterial({color:0xffc15a,emissive:0xffa030,emissiveIntensity:1.2,metalness:.6,roughness:.2}));sp.position.y=178;fg.add(sp);
+const sp2=new THREE.Mesh(new THREE.ConeGeometry(2,36,8),neon(0xff9a2e));sp2.position.y=212;fg.add(sp2);
+fg.position.set(120,0,80);scene.add(fg);
+const core=new THREE.Group();
+const cm=new THREE.MeshStandardMaterial({color:0x0a2030,metalness:1,roughness:.1,emissive:0x00f0ff,emissiveIntensity:.5,transparent:true,opacity:.85});
+for(let i=0;i<5;i++){const s=new THREE.Mesh(new THREE.CylinderGeometry(14-i*2.2,16-i*2.2,50,8),cm);s.position.y=25+i*48;s.rotation.y=i*.4;s.castShadow=true;core.add(s);}
+const ringsArr=[];for(let i=0;i<4;i++){const r=new THREE.Mesh(new THREE.TorusGeometry(28+i*8,.8,8,80),neon(i%2?0x7cffb2:0x00f0ff));r.rotation.x=Math.PI/2;r.position.y=120+i*40;core.add(r);ringsArr.push(r);}
+const orb=new THREE.Mesh(new THREE.IcosahedronGeometry(10,2),new THREE.MeshBasicMaterial({color:0x00f0ff,wireframe:true}));orb.position.y=300;core.add(orb);
+const beam=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,600,8),new THREE.MeshBasicMaterial({color:0x00f0ff,transparent:true,opacity:.5}));beam.position.y=480;core.add(beam);
+scene.add(core);
+const park=new THREE.Group();
+const pl=new THREE.Mesh(new THREE.CylinderGeometry(55,40,8,48),new THREE.MeshStandardMaterial({color:0x1a6b3a,roughness:.9}));pl.position.y=70;pl.receiveShadow=true;park.add(pl);
+const edge=new THREE.Mesh(new THREE.TorusGeometry(55,.8,8,80),neon(0x7cffb2));edge.rotation.x=Math.PI/2;edge.position.y=74;park.add(edge);
+for(let i=0;i<40;i++){const a=R(0,6.28),d=R(0,48);const t=new THREE.Group();
+ const tr=new THREE.Mesh(new THREE.CylinderGeometry(.5,.8,8),new THREE.MeshStandardMaterial({color:0x5a3a1a}));tr.position.y=4;t.add(tr);
+ for(let k=0;k<5;k++){const lf=new THREE.Mesh(new THREE.ConeGeometry(.8,9,4),new THREE.MeshStandardMaterial({color:0x2fbf5a}));lf.position.set(Math.cos(k*1.26)*2.5,10,Math.sin(k*1.26)*2.5);lf.rotation.set(Math.sin(k*1.26)*1.1,0,-Math.cos(k*1.26)*1.1);t.add(lf);}
+ t.position.set(Math.cos(a)*d,74,Math.sin(a)*d);park.add(t);}
+for(const [x,z] of [[-30,-30],[30,-30],[0,35]]){const c=new THREE.Mesh(new THREE.CylinderGeometry(3,3,70),new THREE.MeshStandardMaterial({color:0x223348,metalness:.8}));c.position.set(x,35,z);park.add(c);}
+park.position.set(-60,0,170);scene.add(park);
+const train=new THREE.Group();for(let i=0;i<6;i++){const c=new THREE.Mesh(new THREE.BoxGeometry(14,5,6),new THREE.MeshBasicMaterial({color:i?0xdddddd:0x00f0ff}));c.position.x=-i*15;train.add(c);}
+train.position.y=42;scene.add(train);
+const rail=new THREE.Mesh(new THREE.BoxGeometry(900,1.5,4),new THREE.MeshStandardMaterial({color:0x334455,metalness:1}));rail.position.set(0,39,0);scene.add(rail);
+for(let x=-420;x<=420;x+=60){const p=new THREE.Mesh(new THREE.BoxGeometry(3,39,3),new THREE.MeshStandardMaterial({color:0x334455}));p.position.set(x,19.5,0);scene.add(p);}
+const cars=[];const cg=new THREE.BoxGeometry(3,1,1.6);
+for(let i=0;i<120;i++){const col=[0x00f0ff,0xff2d7a,0xffd27a,0x7cffb2][i%4];const m=new THREE.Mesh(cg,new THREE.MeshBasicMaterial({color:col}));
+ const lane=Math.floor(R(-4,4))*80+(Math.random()>.5?2:-2),ax=Math.random()>.5;
+ m.userData={ax,lane,y:R(15,110),s:R(30,80)*(Math.random()>.5?1:-1),t:R(-350,350)};
+ m.rotation.y=ax?0:Math.PI/2;scene.add(m);cars.push(m);}
+const sg=new THREE.BufferGeometry(),sp3=[];for(let i=0;i<2500;i++){const v=new THREE.Vector3().randomDirection().multiplyScalar(2200);v.y=Math.abs(v.y);sp3.push(v.x,v.y,v.z);}
+sg.setAttribute('position',new THREE.Float32BufferAttribute(sp3,3));
+const stars=new THREE.Points(sg,new THREE.PointsMaterial({color:0xffffff,size:3,fog:false}));scene.add(stars);
+
+setTime(true);
+
+const spots={
+ kingdom:{p:[-30,170,40],t:[-110,110,-90],h:'برج المملكة',d:'برج أيقوني بتاج مفتوح يربط الأرض بالسماء، رمز لحاضر الرياض ومستقبلها.'},
+ faisal:{p:[190,170,150],t:[120,110,80],h:'برج الفيصلية',d:'كرة ذهبية مضيئة فوق قاعدة هرمية، تحية للعمارة الحديثة في العاصمة.'},
+ core:{p:[110,230,120],t:[0,150,0],h:'المركز المستقبلي',d:'قلب المدينة: أبراج متدرجة وحلقات طاقة نيون وشعاع ضوء يُرى من بعيد.'},
+ park:{p:[60,130,290],t:[-60,60,170],h:'الحديقة المعلّقة',d:'واحة خضراء معلقة على ارتفاع 70 مترًا تعكس مبادرات الرياض الخضراء.'}};
+let tween=null,tour=false;
+function go(k){const s=spots[k];tour=false;tween={t:0,fp:cam.position.clone(),ft:ctl.target.clone(),tp:new THREE.Vector3(...s.p),tt:new THREE.Vector3(...s.t)};
+ document.getElementById('info').innerHTML=`<h3>${s.h}</h3><p>${s.d}</p>`;}
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
+document.getElementById('tour').onclick=()=>{tour=!tour};
+document.getElementById('tod').onclick=()=>setTime(!night);
+ctl.addEventListener('start',()=>tour=false);
+
+const clk=new THREE.Clock();
+function loop(){requestAnimationFrame(loop);const dt=clk.getDelta(),t=clk.elapsedTime;
+ if(tween){tween.t=Math.min(1,tween.t+dt*.5);const e=tween.t*tween.t*(3-2*tween.t);
+  cam.position.lerpVectors(tween.fp,tween.tp,e);ctl.target.lerpVectors(tween.ft,tween.tt,e);if(tween.t>=1)tween=null;}
+ if(tour){const a=t*.12;cam.position.set(Math.cos(a)*380,130+Math.sin(t*.2)*40,Math.sin(a)*380);ctl.target.set(0,70,0);}
+ cars.forEach(c=>{const u=c.userData;u.t+=u.s*dt;if(Math.abs(u.t)>350)u.t=-Math.sign(u.s)*350;
+  if(u.ax)c.position.set(u.t,u.y,u.lane);else c.position.set(u.lane,u.y,u.t);});
+ train.position.x=((t*60)%1000)-500;
+ ringsArr.forEach((r,i)=>{r.rotation.z=t*(.4+i*.15)*(i%2?-1:1);r.position.y=120+i*40+Math.sin(t+i)*4;});
+ orb.rotation.y=t;orb.rotation.x=t*.6;beam.material.opacity=.35+Math.sin(t*2)*.15;
+ sp.material.emissiveIntensity=1+Math.sin(t*2)*.3;stars.visible=night;stars.rotation.y=t*.003;
+ ctl.update();comp.render();}
+loop();
+addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);comp.setSize(innerWidth,innerHeight);});
+setTimeout(()=>{const l=document.getElementById('load');l.style.opacity=0;setTimeout(()=>l.remove(),900)},600);
+</script></body></html>
